@@ -1,6 +1,6 @@
 cask "toucli" do
     version "1.0"
-    sha256 "82307c6debf36e0619d46b4054c2be201a7d78ff98efdb3c4612bfb1d83b008f"
+    sha256 "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
     url "https://github.com/pathtofile/toucli/releases/download/v#{version}/toucli.zip"
     name "Toucli"
