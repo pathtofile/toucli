@@ -19,9 +19,6 @@ programs or files, using the Apple Secure Enclave to generate an encryption key 
 with biometric interaction from the user. This key is then used to encrpyt or decrypt the data.
 (see the section below for more information).
 
-# System Requirements
-Needs a Mac with a Secure Enclave. Only tested on a Macbook Air M1 running Montery.
-
 # Security Overview
 To understand exactly how the encryption works, key sizes, etc, read this documentation from Apple: [Protecting Keys with the secure enclave](https://developer.apple.com/documentation/security/certificate_key_and_trust_services/keys/protecting_keys_with_the_secure_enclave
 ))
@@ -34,6 +31,9 @@ Toucli simply implements the bare minimum around the example code:
 5. Send encrypted data out through stdout
 
 Step `3.` is done automatically by the API. Decrypting is the same in reverse.
+
+# System Requirements
+Needs a Mac with a Secure Enclave. Only tested on a Macbook Air M1 running Montery.
 
 # Non-Goals
 ## Transferable keys
@@ -50,8 +50,15 @@ the code complexity in the project and attack surface,
 making it harder for people to read the code and assess if it meets their security levels.
 
 # Installation
+## Using homebew
 ```bash
 brew install pathtofile/toucli
+```
+## Manual
+Download the latest release from [GitHub](https://github.com/pathtofile/toucli/releases/latest),
+drag App into 'Applications' Folder, then the toucli binary is at:
+```
+/Applications/toucli.app/Contents/MacOS/toucli
 ```
 
 # Usage
