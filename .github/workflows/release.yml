@@ -85,21 +85,7 @@ jobs:
       with:
         tag_name: ${{ github.ref }}
         release_name: ${{ github.ref }}
-        body: |
-          Update description
-
-          ## Features
-
-
-          ## Fixes
-
-
-          ## Minimum macOS Version
-
-
-          ## Build
-          https://github.com/pathtofile/toucli/actions/runs/${{ github.run_id }}
-        draft: true
+        draft: false
         prerelease: false
 
     - name: Upload App to Release
