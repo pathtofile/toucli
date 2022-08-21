@@ -1,6 +1,12 @@
 import Foundation
 import Security
 
+let _keyLabel: String = "toucli"
+
+func printErr(_ text: String) {
+    fputs(String(format: "%@\n", text), stderr)
+}
+
 func OSStatusToError(_ status: Int32) -> Error {
     let userInfo: Dictionary = [
         NSLocalizedDescriptionKey: SecCopyErrorMessageString(status, nil)! as String
@@ -49,7 +55,7 @@ func _getKeySE(key: String, createIfMissing: Bool = true) -> (SecKey?, Error?) {
     let status = SecItemCopyMatching(query as CFDictionary, &item)
     if status == errSecItemNotFound && createIfMissing {
         // No key exists yet, create one
-        printErr(String(format: "Key '%@' not found, creating", getKeyName(key)))
+        printErr(String(format: "Key not found, creating..."))
         return _createKeySE(key: key)
     }
 
@@ -110,29 +116,4 @@ func deleteKeySE(key: String) -> Error? {
     let status = SecItemDelete(query)
     guard status == errSecSuccess else { return OSStatusToError(status)}
     return nil
-}
-
-func listKeysSE() -> ([String], Error?) {
-    let query: NSDictionary = [
-        kSecClass: kSecClassKey,
-        kSecAttrApplicationLabel: _keyLabel,
-        kSecReturnAttributes: true,
-        kSecReturnData: true,
-        kSecMatchLimit: kSecMatchLimitAll
-    ]
-
-    var result: AnyObject?
-    let status = SecItemCopyMatching(query, &result)
-    if status == errSecItemNotFound {
-        return ([], nil)
-    } else if status != errSecSuccess || result == nil {
-        return ([], OSStatusToError(status))
-    }
-
-    var keys = [String]()
-    for item in result as! [NSDictionary] {
-        keys.append(item[kSecAttrApplicationTag] as! String)
-    }
-
-    return (keys, nil)
 }

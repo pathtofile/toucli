@@ -1,17 +1,18 @@
 import Foundation
 
+let _keyName: String = "com.pathtofile.toucli.key"
+
 func usageAndExit() -> Int32 {
-    print("Usage: clisd <encrypt|decrypt|list|clear|wipe|e|d|l|c|w> [key]")
+    print("Usage: clisd <encrypt|decrypt|wipe|e|d|w>")
     return 1
 }
 
-func encryptData(_ key: String = _keyLabel) {
+func encryptData() {
     // Read from stdin
     let dataIn = FileHandle.standardInput.availableData as CFData
 
     // Encrypt
-    let toucliKey = String(format: _keyFormat, key)
-    let (dataOut, error) = encryptDataSE(key: toucliKey, data: dataIn)
+    let (dataOut, error) = encryptDataSE(key: _keyName, data: dataIn)
     if let err = error {
         print("Error encrypting data -", err.localizedDescription)
         exit(1)
@@ -21,13 +22,12 @@ func encryptData(_ key: String = _keyLabel) {
     FileHandle.standardOutput.write(dataOut!)
 }
 
-func decryptData(_ key: String = _keyLabel) {
+func decryptData() {
     // Read from stdin
     let dataIn = FileHandle.standardInput.availableData as CFData
 
     // Decrypt
-    let toucliKey = String(format: _keyFormat, key)
-    let (dataOut, error) = decryptDataSE(key: toucliKey, data: dataIn)
+    let (dataOut, error) = decryptDataSE(key: _keyName, data: dataIn)
     if let err = error {
         print("Error decrypting data -", err.localizedDescription)
         exit(1)
@@ -37,62 +37,23 @@ func decryptData(_ key: String = _keyLabel) {
     FileHandle.standardOutput.write(dataOut!)
 }
 
-func listKeys() {
-    // Get all keys
-    let (keys, error) = listKeysSE()
-    if let err = error {
-        print("Error listing keys -", err.localizedDescription)
-        exit(1)
-    }
-
-    for key in keys {
-        print(getKeyName(key))
-    }
-}
-
-func DeleteKey(_ key: String = _keyLabel) {
-    let toucliKey = String(format: _keyFormat, key)
-    if let err = deleteKeySE(key: toucliKey) {
+func wipeKey() {
+    if let err = deleteKeySE(key: _keyName) {
         print("Error deleting key -", err.localizedDescription)
         exit(1)
     }
 }
 
-func wipeKeys() {
-    // Clear all keys
-    let (keys, error) = listKeysSE()
-    if let err = error {
-        print("Error listing keys - ", err.localizedDescription)
-        exit(1)
-    }
-
-    for key in keys {
-        if let error = deleteKeySE(key: key) {
-            print("Error deleting key -", error.localizedDescription)
-            exit(1)
-        }
-    }
-}
-
 func main() throws {
-    guard CommandLine.argc >= 2 && CommandLine.argc <= 3 else { exit(usageAndExit()) }
-    let command = CommandLine.arguments[1]
-    var key = "toucli"
-    if CommandLine.argc == 3 {
-        key = CommandLine.arguments[2]
-    }
+    guard CommandLine.argc == 2 else { exit(usageAndExit()) }
 
-    switch command {
+    switch CommandLine.arguments[1] {
     case "e", "encrypt":
-        encryptData(key)
+        encryptData()
     case "d", "decrypt":
-        decryptData(key)
-    case "l", "list":
-        listKeys()
-    case "c", "clear":
-        DeleteKey(key)
+        decryptData()
     case "w", "wipe":
-        wipeKeys()
+        wipeKey()
     default:
         exit(usageAndExit())
     }
