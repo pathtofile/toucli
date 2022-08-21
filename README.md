@@ -52,8 +52,9 @@ making it harder for people to read the code and assess if it meets their securi
 # Installation
 ## Using homebew
 ```bash
-brew install pathtofile/toucli
+brew install pathtofile/toucli/toucli
 ```
+
 ## Manual
 Download the latest release from [GitHub](https://github.com/pathtofile/toucli/releases/latest),
 drag App into 'Applications' Folder, then the toucli binary is at:
@@ -89,7 +90,10 @@ toucli w
 
 # Uninstallation
 First run `touclie wipe` to remove the key from the secure enclave,
-then just drag the App into the bin.
+then either drag the App into the bin, or if using homebrew:
+```bash
+brew uninstall pathtofile/toucli/toucli
+```
 
 # Icon credits
 App icon made by Akalidz from www.flaticon.com
