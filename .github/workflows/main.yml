@@ -71,8 +71,15 @@ jobs:
             echo "sha-256:"
             shasum -a 256 toucli.zip
             shasum -a 256 Archive.zip
+
     - name: Upload App to Artifacts
       uses: actions/upload-artifact@v1
       with:
         name: toucli.zip
         path: toucli.zip
+
+    - name: Upload Archive to Artifacts
+      uses: actions/upload-artifact@v1
+      with:
+        name: Archive.zip
+        path: Archive.zip

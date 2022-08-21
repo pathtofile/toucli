@@ -5,71 +5,78 @@ on:
     tags:
       - 'v*'
 jobs:
-  test:
-    runs-on: macos-11.0
-    timeout-minutes: 10
-    steps:
-    - uses: actions/checkout@v1
-    - name: Setup Signing
-      env: 
-        SIGNING_DATA: ${{ secrets.SIGNING_DATA }}
-        SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
-        HOST_PROFILE_DATA: ${{ secrets.HOST_PROFILE_DATA }}
-        AGENT_PROFILE_DATA: ${{ secrets.AGENT_PROFILE_DATA }}
-        APPLE_API_KEY_DATA: ${{ secrets.APPLE_API_KEY_DATA }}
-        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-      run: ./.github/scripts/signing.sh
-    - name: Set Environment
-      run: sudo xcrun xcode-select -s /Applications/Xcode_13.2.1.app
-    - name: Test
-      run: |
-            pushd Sources/Packages
-            swift test
-            popd
   build:
-    runs-on: macos-11.0
+    runs-on: macos-latest
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v2
-    - name: Setup Signing
-      env: 
-        SIGNING_DATA: ${{ secrets.SIGNING_DATA }}
-        SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
-        HOST_PROFILE_DATA: ${{ secrets.HOST_PROFILE_DATA }}
-        AGENT_PROFILE_DATA: ${{ secrets.AGENT_PROFILE_DATA }}
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Install the Apple certificate and provisioning profile
+      env:
+        BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+        P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+        BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
+        KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         APPLE_API_KEY_DATA: ${{ secrets.APPLE_API_KEY_DATA }}
         APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-      run: ./.github/scripts/signing.sh
+      run: |
+        # Import certificate and private key
+        echo $BUILD_CERTIFICATE_BASE64 | base64 -d -o Signing.p12
+        security create-keychain -p $KEYCHAIN_PASSWORD ci.keychain
+        security default-keychain -s ci.keychain
+        security list-keychains -s ci.keychain
+        security import ./Signing.p12 -k ci.keychain -P $P12_PASSWORD -A
+        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $KEYCHAIN_PASSWORD ci.keychain
+
+        # Import Profiles
+        mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+        echo $BUILD_PROVISION_PROFILE_BASE64 | base64 -d -o pp.provisionprofile
+        PP_UUID=`grep UUID -A1 -a pp.provisionprofile | grep -io "[-A-F0-9]\{36\}"`
+        cp pp.provisionprofile ~/Library/MobileDevice/Provisioning\ Profiles/$PP_UUID.provisionprofile
+
+        ls -l ~/Library/MobileDevice/Provisioning\ Profiles
+        shasum -a 256 ~/Library/MobileDevice/Provisioning\ Profiles/*
+
+        # Create directories for Notorization
+        mkdir ~/.private_keys
+        echo -n "$APPLE_API_KEY_DATA" > ~/.private_keys/AuthKey_$APPLE_API_KEY_ID.p8
+
     - name: Set Environment
       run: sudo xcrun xcode-select -s /Applications/Xcode_13.2.1.app
-    - name: Update Build Number
-      env:
-        TAG_NAME: ${{ github.ref }}
-        RUN_ID: ${{ github.run_id }}
-      run: |
-            export CLEAN_TAG=$(echo $TAG_NAME | sed -e 's/refs\/tags\/v//')
-            sed -i '' -e "s/GITHUB_CI_VERSION/$CLEAN_TAG/g" Sources/Config/Config.xcconfig
-            sed -i '' -e "s/GITHUB_BUILD_NUMBER/1.$RUN_ID/g" Sources/Config/Config.xcconfig
-            sed -i '' -e "s/GITHUB_BUILD_URL/https:\/\/github.com\/maxgoedjen\/secretive\/actions\/runs\/$RUN_ID/g" Sources/Secretive/Credits.rtf
-    - name: Build
-      run: xcrun xcodebuild -project Sources/Secretive.xcodeproj -scheme Secretive -configuration Release -archivePath Archive.xcarchive archive
-    - name: Create ZIPs
-      run: |
-            ditto -c -k --sequesterRsrc --keepParent Archive.xcarchive/Products/Applications/Secretive.app ./Secretive.zip
-            ditto -c -k --sequesterRsrc --keepParent Archive.xcarchive ./Archive.zip
+
+    - name: Build app
+      run: xcrun xcodebuild -allowProvisioningUpdates -scheme toucli -archivePath Archive.xcarchive archive
+
+    - name: First ZIP
+      run: ditto -c -k --sequesterRsrc --keepParent Archive.xcarchive/Products/Applications/toucli.app ./toucli.zip
+
     - name: Notarize
       env: 
         APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
         APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
-      run: xcrun notarytool submit --key ~/.private_keys/AuthKey_$APPLE_API_KEY_ID.p8 --key-id $APPLE_API_KEY_ID --issuer $APPLE_API_ISSUER Secretive.zip
+      run: |
+        xcrun notarytool submit --key ~/.private_keys/AuthKey_$APPLE_API_KEY_ID.p8 --key-id $APPLE_API_KEY_ID --issuer $APPLE_API_ISSUER toucli.zip --wait
+
+    - name: Staple
+      run: xcrun stapler staple Archive.xcarchive/Products/Applications/toucli.app
+
+    - name: New ZIPs
+      run: |
+        ditto -c -k --sequesterRsrc --keepParent Archive.xcarchive/Products/Applications/toucli.app ./toucli.zip
+        ditto -c -k --sequesterRsrc --keepParent  Archive.xcarchive ./Archive.zip
+
     - name: Document SHAs
       run: |
-            echo "sha-512:"
-            shasum -a 512 Secretive.zip
-            shasum -a 512 Archive.zip
             echo "sha-256:"
-            shasum -a 256 Secretive.zip
+            shasum -a 256 toucli.zip
             shasum -a 256 Archive.zip
+
+    - name: Upload App to Artifacts
+      uses: actions/upload-artifact@v1
+      with:
+        name: toucli.zip
+        path: toucli.zip
+
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
@@ -91,9 +98,10 @@ jobs:
 
 
           ## Build
-          https://github.com/maxgoedjen/secretive/actions/runs/${{ github.run_id }}
+          https://github.com/pathtofile/toucli/actions/runs/${{ github.run_id }}
         draft: true
         prerelease: false
+
     - name: Upload App to Release
       id: upload-release-asset-app
       uses: actions/upload-release-asset@v1.0.1
@@ -101,16 +109,16 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./Secretive.zip
-        asset_name: Secretive.zip
+        asset_path: ./toucli.zip
+        asset_name: toucli.zip
         asset_content_type: application/zip
     - name: Upload App to Artifacts
       uses: actions/upload-artifact@v1
       with:
-        name: Secretive.zip
-        path: Secretive.zip
+        name: toucli.zip
+        path: toucli.zip
     - name: Upload Archive to Artifacts
       uses: actions/upload-artifact@v1
       with:
-        name: Xcode_Archive.zip
+        name: Archive.zip
         path: Archive.zip

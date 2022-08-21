@@ -57,10 +57,12 @@ brew install pathtofile/toucli
 echo "apple" | toucli encrypt > /path/to/encrypted/file
 echo "apple" | toucli e > /path/to/encrypted/file
 cat plain.txt | toucli e > plain_encrypted.bin
+toucli e <plain.txt >plain_encrypted.bin
 
 # Decrypt file
 cat /path/to/encrypted/file | toucli decrypt
 cat /path/to/encrypted/file | toucli d
+toucli d <plain_encrypted.bin >plain.txt
 
 # Decrypt data for use as an evironment variable
 export API_KEY=$(cat /path/to/api_key_encrypted_file | toucli d )
@@ -69,8 +71,6 @@ export API_KEY=$(cat /path/to/api_key_encrypted_file | toucli d )
 # Store and use encrypted data as base64
 echo "apple" | toucli e | base64 > /path/to/encrypted/fileb64
 cat /path/to/encrypted/fileb64 | base64 -d | toucli d
-
-# Send data to remote web service
 
 # Wipe key
 toucli wipe
