@@ -3,7 +3,7 @@ import Foundation
 let _keyName: String = "com.pathtofile.toucli.key"
 
 func usageAndExit() -> Int32 {
-    print("Usage: clisd <encrypt|decrypt|wipe|e|d|w>")
+    print("Usage: toucli <encrypt|decrypt|wipe|e|d|w>")
     return 1
 }
 
@@ -38,6 +38,7 @@ func decryptData() {
 }
 
 func wipeKey() {
+    // Delete key
     if let err = deleteKeySE(key: _keyName) {
         print("Error deleting key -", err.localizedDescription)
         exit(1)

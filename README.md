@@ -1,6 +1,9 @@
 # TOUCLI
 
 Use TouchID and the Secure Enclave to encrypt data from the commandline.
+I Pronounce it 'toe-clee', but you can say it however you'd like.
+
+![Toucli Demo video](demo.mov)
 
 # Overview
 This tool solves a small but specific problem that I had.
@@ -50,17 +53,21 @@ the code complexity in the project and attack surface,
 making it harder for people to read the code and assess if it meets their security levels.
 
 # Installation
-## Using homebew
+You can use either HomeBrew to install the App, or just download the latest App from [GitHub](https://github.com/pathtofile/toucli/releases/latest)
+and drag it into your 'Applications' folder.
+
+To use Homebew:
 ```bash
 brew install pathtofile/toucli/toucli
 ```
 
-## Manual
-Download the latest release from [GitHub](https://github.com/pathtofile/toucli/releases/latest),
-drag App into 'Applications' Folder, then the toucli binary is at:
+Either way, the `touli` binary will be availible at:
 ```
 /Applications/toucli.app/Contents/MacOS/toucli
 ```
+
+If using Homebrew, a symlink will also be installed into `/opt/homebrew/bin/`, so if that
+is on your PATH you can just run `toucli`.
 
 # Usage
 ```bash

@@ -1,12 +1,16 @@
 import Foundation
 import Security
 
+// We also use a keychain label to help prevent
+// user or deleting the wrong key
 let _keyLabel: String = "toucli"
 
+// Helper to print debug logs to stderr
 func printErr(_ text: String) {
     fputs(String(format: "%@\n", text), stderr)
 }
 
+// Convert OSStatus from Sec* functions into an Error object
 func OSStatusToError(_ status: Int32) -> Error {
     let userInfo: Dictionary = [
         NSLocalizedDescriptionKey: SecCopyErrorMessageString(status, nil)! as String
@@ -14,6 +18,7 @@ func OSStatusToError(_ status: Int32) -> Error {
     return NSError(domain: _keyLabel, code: Int(status), userInfo: userInfo) as Error
 }
 
+// Create Key
 func _createKeySE(key: String) -> (SecKey?, Error?) {
     let access = SecAccessControlCreateWithFlags(
         kCFAllocatorDefault,
@@ -42,6 +47,7 @@ func _createKeySE(key: String) -> (SecKey?, Error?) {
     return (priKey, nil)
 }
 
+// Get or create key
 func _getKeySE(key: String, createIfMissing: Bool = true) -> (SecKey?, Error?) {
     let query: NSDictionary = [
         kSecClass: kSecClassKey,
@@ -67,6 +73,7 @@ func _getKeySE(key: String, createIfMissing: Bool = true) -> (SecKey?, Error?) {
     return (key, nil)
 }
 
+// Encrypt data with key
 func encryptDataSE(key: String, data: CFData) -> (Data?, Error?) {
     // Get or create key
     let (priKey, errorGet) = _getKeySE(key: key, createIfMissing: true)
@@ -86,6 +93,7 @@ func encryptDataSE(key: String, data: CFData) -> (Data?, Error?) {
     return (data as Data?, nil)
 }
 
+// Decrypt data with key
 func decryptDataSE(key: String, data: CFData) -> (Data?, Error?) {
     // Get key
     let (priKey, errorGet) = _getKeySE(key: key, createIfMissing: false)
@@ -104,6 +112,7 @@ func decryptDataSE(key: String, data: CFData) -> (Data?, Error?) {
     return (data as Data?, nil)
 }
 
+// Delete key
 func deleteKeySE(key: String) -> Error? {
     let query: NSDictionary = [
         kSecClass: kSecClassKey,
