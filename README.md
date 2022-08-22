@@ -12,6 +12,7 @@ I wanted to pass in sensitive data (such as API keys) into 3rd partry programs, 
 with these constraints:
 1. Data is encrypted on disk
 2. Require me to use TouchID to access/decrypt the data
+3. Not require external services or servers
 
 This would reduce the risk of rouge usermode malware on my device being able
 to steal or use these secrets, but I could still use the secrets 'transparently' in
@@ -21,6 +22,11 @@ Toucli achieves all this by providing a sinple 'pipe' to encrypt data to and fro
 programs or files, using the Apple Secure Enclave to generate an encryption key that can only be used
 with biometric interaction from the user. This key is then used to encrpyt or decrypt the data.
 (see the section below for more information).
+
+For Production and Workplace environments, a proper remote system like Hashicorp Vault
+would be far better, as it provides short-term credentials, auditing, sharing, etc.
+But for my own personal use on just my single machine, I didn't want to maintain another
+system, and most importantly it was an excuse to learn how to program in Swift.
 
 # Security Overview
 To understand exactly how the encryption works, key sizes, etc, read this documentation from Apple: [Protecting Keys with the secure enclave](https://developer.apple.com/documentation/security/certificate_key_and_trust_services/keys/protecting_keys_with_the_secure_enclave
